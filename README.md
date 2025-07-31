@@ -1,2 +1,5 @@
-# Quiz-Master-V2
-t is a multi-user app (one requires an administrator and other users) that acts as an exam preparation site for multiple courses.
+# Flask + VueJS Project
+This is a full-stack Quiz App Project combining Flask (backend) and VueJS (frontend).
+
+Back End: python3 app.py
+Front End: npm run dev
