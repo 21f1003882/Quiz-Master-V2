@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% from "_form_helpers.html" import render_field %} {# Optional: Import macro for rendering form fields #}
+
+{% block title %}Admin Dashboard - Quiz App{% endblock %}
+
+
+
+
+{% block content %}
+<h1 class="adminHeading mb-4">Admin Dashboard</h1>
+
+
+<div class="card add-subject-section">
+    <h5 class="card-title mb-3">Add New Subject</h5>
+    <form action="{{ url_for('admin.add_subject') }}" method="POST" class="row g-3 align-items-end">
+        {{ subject_form.hidden_tag() }}
+        <div class="col-md-5">
+            {{ subject_form.name(class="form-control", placeholder="New Subject Name") }}
+        </div>
+        <div class="col-md-5">
+            {{ subject_form.description(class="form-control", placeholder="Optional Description", rows="1") }}
+        </div>
+        <div class="col-md-2">
+            {{ subject_form.submit(class="btn btn-success w-100") }}
+        </div>
+    </form>
+</div>
+
+
+
+<div class="accordion" id="subjectsAccordion">
+    {% for subject in subjects %}
+    <div class="accordion-item mb-3 border-0">
+        <h2 class="accordion-header" id="headingSubject{{ subject.id }}">
+            <div class="subject-dropdown d-flex align-items-center subject-header-controls">
+                <button class="accordion-button subject-accordion-button collapsed flex-grow-1" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSubject{{ subject.id }}" aria-expanded="false" aria-controls="collapseSubject{{ subject.id }}">
+                    {{ subject.name }}
+                </button>
+                <a href="{{ url_for('admin.edit_subject', subject_id=subject.id) }}" class="btn btn-sm  btn-outline-primary ms-2">Edit</a>
+                <form action="{{ url_for('admin.delete_subject', subject_id=subject.id) }}" method="POST" onsubmit="return confirm('Delete subject \'{{ subject.name }}\' and ALL its contents?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                </form>
+            </div>
+        </h2>
+        <div id="collapseSubject{{ subject.id }}" class="accordion-collapse collapse" aria-labelledby="headingSubject{{ subject.id }}" data-bs-parent="#subjectsAccordion">
+            <div class="accordion-body border rounded-bottom">
+                {% if subject.description %}<p><em>{{ subject.description }}</em></p>{% endif %}
+                <h5 class="mt-3">Chapters</h5>
+                {% if subject.chapters.count() > 0 %} {# Use count() method for dynamic relationship #}
+                    <ul class="list-unstyled">
+                        {% for chapter in subject.chapters.order_by('name').all() %} {# Order chapters #}
+                        <li class="chapter-item">
+                            {# Chapter Name & Controls #}
+                            <span class="flex-grow-1 me-3">{{ chapter.name }}</span>
+                            <div class="chapter-controls flex-shrink-0">
+                                {# --- NEW: Quizzes Button --- #}
+                                <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#collapseChapterQuizzes{{ chapter.id }}" aria-expanded="false" aria-controls="collapseChapterQuizzes{{ chapter.id }}">
+                                    Quizzes <span class="badge bg-secondary">{{ chapter.quizzes.count() }}</span>
+                                </button>
+                                {# --- End NEW --- #}
+                                <a href="{{ url_for('admin.edit_chapter', chapter_id=chapter.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                                <form action="{{ url_for('admin.delete_chapter', chapter_id=chapter.id) }}" method="POST" onsubmit="return confirm('Delete chapter \'{{ chapter.name }}\' and its quizzes?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                </form>
+                            </div>
+                        </li>
+                        {# --- NEW: Collapsible Quiz List --- #}
+                        <li class="list-unstyled"> {# Use li for structure if desired #}
+                            <div class="collapse quiz-list-nested" id="collapseChapterQuizzes{{ chapter.id }}">
+                                <h6 class="mt-2 ">Quizzes in this Chapter</h6>
+                                {% if chapter.quizzes.count() > 0 %}
+                                <ul class="list-unstyled">
+                                    {% for quiz in chapter.quizzes.order_by('title').all() %}
+                                    <li class="quiz-item">
+                                        <span>{{ quiz.title }} ({{ quiz.duration_minutes }} min) {% if not quiz.is_active %}<span class="badge bg-warning text-dark">Inactive</span>{% endif %}</span>
+                                        <div class="quiz-controls">
+                                            <a href="{{ url_for('admin.manage_quiz_questions', quiz_id=quiz.id) }}" class="btn btn-sm btn-outline-secondary">Questions</a>
+                                            <a href="{{ url_for('admin.edit_quiz', quiz_id=quiz.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                                            <form action="{{ url_for('admin.delete_quiz', quiz_id=quiz.id) }}" method="POST" onsubmit="return confirm('Delete quiz \'{{ quiz.title }}\'?');">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Del</button> {# Shorten button text #}
+                                            </form>
+                                        </div>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                                {% else %}
+                                 <p class=" small">No quizzes found in this chapter.</p>
+                                {% endif %}
+                                {# Link to Add Quiz page, pre-filling chapter #}
+                                <a href="{{ url_for('admin.add_quiz', chapter_id=chapter.id) }}" class="btn btn-sm btn-success mt-2">+ Add Quiz to Chapter</a>
+                            </div>
+                        </li>
+                         {# --- End NEW --- #}
+                        {% endfor %} {# End chapter loop #}
+                    </ul>
+                {% else %}
+                    <p class="">No chapters found for this subject.</p>
+                {% endif %}
+
+               
+                <form action="{{ url_for('admin.add_chapter', subject_id=subject.id) }}" method="POST" class="add-chapter-form row g-2 align-items-center">
+                    {{ chapter_form.hidden_tag() }} {# Use passed form instance for CSRF #}
+                    <div class="col-auto flex-grow-1">
+                        <label for="chapterNameInput{{ subject.id }}" class="visually-hidden">Chapter Name</label>
+                        {# Use WTForms field rendering if preferred #}
+                        <input type="text" name="name" class="form-control form-control-sm" id="chapterNameInput{{ subject.id }}" placeholder="New Chapter Name" required>
+                    </div>
+                    <div class="col-auto">
+                         {# Use WTForms field rendering if preferred #}
+                        <button type="submit" class="btn btn-secondary btn-sm">Add Chapter</button>
+                    </div>
+                </form>
+
+            </div> 
+        </div> 
+    </div>
+    {% else %}
+        <p class="text-center ">No subjects created yet.</p>
+    {% endfor %} {# End subject loop #}
+</div> {# End Subjects Accordion #}
+
+
+{% endblock %}

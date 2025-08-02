@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "_form_helpers.html" import render_field %}
+
+{% block title %}{{ action }} Quiz - Admin{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">{{ action }} Quiz</h1>
+{% if quiz %}
+    <h5 class="mb-3">Editing: {{ quiz.title }}</h5>
+{% endif %}
+
+<form method="POST">
+    {{ form.hidden_tag() }} {# CSRF token #}
+
+    {{ render_field(form.title) }}
+
+    {# SelectField for Chapter #}
+    <div class="mb-3">
+        {{ form.chapter_id.label(class="form-label") }}
+        {{ form.chapter_id(class="form-select" + (" is-invalid" if form.chapter_id.errors else "")) }}
+        {% if form.chapter_id.errors %}
+            <div class="invalid-feedback">
+                {% for error in form.chapter_id.errors %}{{ error }}{% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    {{ render_field(form.duration_minutes) }}
+
+    {# Basic rendering for DateTimeField - may need custom widget/JS for better UX #}
+
+    {# BooleanField rendering #}
+     <div class="mb-3 form-check">
+        {{ form.is_active(class="form-check-input") }}
+        {{ form.is_active.label(class="form-check-label") }}
+     </div>
+
+
+    <div class="mt-4">
+        {{ form.submit(class="btn btn-primary") }}
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary ms-2">Cancel</a>
+    </div>
+</form>
+{% endblock %}

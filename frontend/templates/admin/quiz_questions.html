@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% from "_form_helpers.html" import render_field %}
+
+{% block title %}Manage Questions for {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Admin Dashboard</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Quiz: {{ quiz.title }}</li>
+  </ol>
+</nav>
+
+<h1 class="mb-4">Manage Questions: {{ quiz.title }}</h1>
+<h5 class=" mb-4">Chapter: {{ quiz.chapter.name }} | Subject: {{ quiz.chapter.subject.name }}</h5>
+
+
+{#--- Add New Question Form ---#}
+<div class="card mb-4 border-success">
+    <div class="card-header bg-success text-white">Add New Question</div>
+    <div class="card-body">
+        <form action="{{ url_for('admin.manage_quiz_questions', quiz_id=quiz.id) }}" method="POST">
+            {{ form.hidden_tag() }} {# CSRF #}
+            {{ render_field(form.text, rows="3") }}
+
+            <div class="row mb-3">
+                <div class="col-md-6">{{ render_field(form.option1) }}</div>
+                <div class="col-md-6">{{ render_field(form.option2) }}</div>
+            </div>
+             <div class="row mb-3">
+                <div class="col-md-6">{{ render_field(form.option3) }}</div>
+                <div class="col-md-6">{{ render_field(form.option4) }}</div>
+            </div>
+
+            {# RadioSelect for Correct Option #}
+            <div class="mb-3">
+                {{ form.correct_option.label(class="form-label") }}
+                {% for subfield in form.correct_option %}
+                <div class="form-check form-check-inline">
+                    {{ subfield(class="form-check-input") }}
+                    {{ subfield.label(class="form-check-label") }}
+                </div>
+                {% endfor %}
+                 {% if form.correct_option.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.correct_option.errors %}{{ error }}{% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            {{ form.submit(class="btn btn-success") }}
+        </form>
+    </div>
+</div>
+
+
+{#--- List Existing Questions ---#}
+<h3 class="mt-5 mb-3">Existing Questions</h3>
+{% if questions %}
+    {% for question in questions %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+                <p class="card-text mb-1"><strong>Q{{ loop.index }}:</strong> {{ question.text }}</p>
+                <div>
+                    <a href="{{ url_for('admin.edit_question', question_id=question.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                    <form action="{{ url_for('admin.delete_question', question_id=question.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this question?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+            <ul class="list-group list-group-flush mt-2">
+                {% for option in question.options %}
+                    <li class="list-group-item {% if option.is_correct %}list-group-item-success{% endif %}">
+                        {{ loop.index }}. {{ option.text }} {% if option.is_correct %}<span class="badge bg-success float-end">Correct</span>{% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <p class="">No questions added to this quiz yet.</p>
+{% endif %}
+
+{% endblock %}

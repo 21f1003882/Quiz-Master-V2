@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "_form_helpers.html" import render_field %} {# Optional macro #}
+
+{% block title %}{{ action }} Chapter - Admin{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">{{ action }} Chapter</h1>
+{% if chapter %}
+    <h5 class="mb-3">Editing: {{ chapter.name }} (Subject: {{ chapter.subject.name }})</h5>
+{% endif %}
+
+<form method="POST"> {# Action URL determined by the route rendering this #}
+    {{ form.hidden_tag() }} {# CSRF token #}
+
+    <div class="mb-3">
+        {{ form.name.label(class="form-label") }}
+        {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+        {% if form.name.errors %}
+            <div class="invalid-feedback">
+                {% for error in form.name.errors %}{{ error }}{% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    {# Subject is determined by the context (URL), not changed here #}
+
+    <div class="mt-4">
+        {{ form.submit(class="btn btn-primary") }}
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary ms-2">Cancel</a>
+    </div>
+</form>
+{% endblock %}

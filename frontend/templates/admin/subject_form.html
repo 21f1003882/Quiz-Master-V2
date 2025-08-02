@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% from "_form_helpers.html" import render_field %} {# Optional macro #}
+
+{% block title %}{{ action }} Subject - Admin{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">{{ action }} Subject</h1>
+{# If editing, show which subject #}
+{% if subject %}
+    <h5 class="mb-3">Editing: {{ subject.name }}</h5>
+{% endif %}
+
+{# You might need a different action URL for add vs edit if not handled in one route #}
+<form method="POST"> {# Action URL determined by the route rendering this #}
+    {{ form.hidden_tag() }} {# CSRF token #}
+
+    <div class="mb-3">
+        {{ form.name.label(class="form-label") }}
+        {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+        {% if form.name.errors %}
+            <div class="invalid-feedback">
+                {% for error in form.name.errors %}{{ error }}{% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="mb-3">
+        {{ form.description.label(class="form-label") }}
+        {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows="3") }}
+         {% if form.description.errors %}
+            <div class="invalid-feedback">
+                {% for error in form.description.errors %}{{ error }}{% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="mt-4">
+        {{ form.submit(class="btn btn-primary") }}
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary ms-2">Cancel</a>
+    </div>
+</form>
+{% endblock %}

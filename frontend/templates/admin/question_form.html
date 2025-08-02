@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% from "_form_helpers.html" import render_field %}
+
+{% block title %}{{ action }} Question - Admin{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">Admin Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="{{ url_for('admin.manage_quiz_questions', quiz_id=question.quiz_id) }}">Quiz: {{ question.quiz.title }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ action }} Question</li>
+  </ol>
+</nav>
+
+<h1 class="mb-4">{{ action }} Question</h1>
+<h5 class=" mb-4">Quiz: {{ question.quiz.title }}</h5>
+
+
+<form method="POST">
+    {{ form.hidden_tag() }} {# CSRF #}
+
+    {{ render_field(form.text, rows="3") }}
+
+    <div class="row mb-3">
+        <div class="col-md-6">{{ render_field(form.option1) }}</div>
+        <div class="col-md-6">{{ render_field(form.option2) }}</div>
+    </div>
+     <div class="row mb-3">
+        <div class="col-md-6">{{ render_field(form.option3) }}</div>
+        <div class="col-md-6">{{ render_field(form.option4) }}</div>
+    </div>
+
+    {# RadioSelect for Correct Option #}
+    <div class="mb-3">
+        {{ form.correct_option.label(class="form-label") }}
+        {% for subfield in form.correct_option %}
+        <div class="form-check form-check-inline">
+            {{ subfield(class="form-check-input") }}
+            {{ subfield.label(class="form-check-label") }}
+        </div>
+        {% endfor %}
+         {% if form.correct_option.errors %}
+            <div class="invalid-feedback d-block">
+                {% for error in form.correct_option.errors %}{{ error }}{% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="mt-4">
+        {{ form.submit(class="btn btn-primary") }}
+        <a href="{{ url_for('admin.manage_quiz_questions', quiz_id=question.quiz_id) }}" class="btn btn-secondary ms-2">Cancel</a>
+    </div>
+</form>
+
+{% endblock %}

@@ -1,0 +1,30 @@
+title,chapter_name,subject_name,duration_minutes,is_active
+Solving Linear Equations,Algebra Basics,Mathematics,15,true
+Identifying Shapes,Geometry Fundamentals,Mathematics,10,true
+Limits Introduction,Calculus I,Mathematics,25,true
+Basic Probability,Statistics Basics,Mathematics,20,true
+Newton's Laws,Classical Mechanics,Physics,20,true
+Projectile Motion,Classical Mechanics,Physics,25,true
+Coulomb's Law,Electromagnetism I,Physics,15,true
+Ohm's Law,Electromagnetism I,Physics,15,false,
+Heat Transfer,Thermodynamics,Physics,18,true
+Reflection and Refraction,Optics,Physics,15,true
+Atomic Structure Basics,Introduction to Chemistry,Chemistry,15,true
+Naming Alkanes,Organic Chemistry I,Chemistry,20,true
+Periodic Trends,Inorganic Chemistry,Chemistry,15,true
+The Cell Membrane,Cell Biology,Biology,15,true
+Mendelian Genetics,Genetics,Biology,25,true
+Ecosystem Components,Ecology,Biology,15,true
+Mesopotamia,Ancient Civilizations,History,15,true
+The Roman Empire,Ancient Civilizations,History,20,true
+The Feudal System,Medieval Europe,History,15,true
+Causes of WWI,World War I,History,20,false,
+Landforms,Physical Geography,Geography,15,true
+Population Density,Human Geography,Geography,15,true
+Python Basics,Introduction to Programming,Computer Science,30,true
+Variables and Data Types,Introduction to Programming,Computer Science,20,true
+Linked Lists,Data Structures,Computer Science,25,true
+Sorting Algorithms,Algorithms,Computer Science,30,true
+Understanding Sonnets,Introduction to Poetry,Literature,15,true
+Hamlet Act I,Shakespearean Plays,Literature,25,true
+Themes in 1984,Modern Novels,Literature,20,true

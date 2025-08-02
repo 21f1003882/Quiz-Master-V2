@@ -1,0 +1,15 @@
+Flask
+Flask-WTF
+WTForms
+requests
+bcrypt
+Flask-SQLAlchemy
+Flask-Security
+Flask-Migrate
+Werkzeug
+Flask-RESTful 
+flasgger
+Flask-JWT-Extended
+requests
+redis
+Flask-Caching

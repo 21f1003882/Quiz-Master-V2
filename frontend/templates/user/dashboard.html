@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Quiz App{% endblock %}
+
+
+
+{% block content %}
+<h1 class="userHeading mb-4">Available Quizzes</h1>
+
+<div class="accordion" id="subjectsAccordionUser">
+    {% for subject in subjects %}
+        {# Only show subject if it has chapters with active quizzes? Optional optimization #}
+        {% set has_active_quiz = false %}
+        {% for chapter in subject.chapters %}
+            {% for quiz in chapter.quizzes %}
+                {% if quiz.is_active %}
+                    {% set has_active_quiz = true %}
+                {% endif %}
+            {% endfor %}
+        {% endfor %}
+
+        {% if has_active_quiz or subject.chapters.count() > 0 %} {# Show subject if it has chapters, even if no active quizzes yet #}
+            <div class="accordion-item mb-3 border-0">
+                <h2 class="accordion-header" id="headingSubjectUser{{ subject.id }}">
+                    <button class="accordion-button subject-accordion-button-user collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSubjectUser{{ subject.id }}" aria-expanded="false" aria-controls="collapseSubjectUser{{ subject.id }}">
+                        {{ subject.name }}
+                    </button>
+                </h2>
+                <div id="collapseSubjectUser{{ subject.id }}" class="accordion-collapse collapse" aria-labelledby="headingSubjectUser{{ subject.id }}" data-bs-parent="#subjectsAccordionUser">
+                    <div class="accordion-body border rounded-bottom">
+                        {% if subject.description %}<p class=" small mb-3"><em>{{ subject.description }}</em></p>{% endif %}
+
+                        {% for chapter in subject.chapters.order_by('name').all() %}
+                             {# Only show chapter if it has active quizzes? #}
+                             {% set chapter_has_active_quiz = false %}
+                             {% for quiz in chapter.quizzes %}
+                                {% if quiz.is_active %}
+                                    {% set chapter_has_active_quiz = true %}
+                                {% endif %}
+                             {% endfor %}
+
+                            {# --- Optionally hide chapter if no active quizzes --- #}
+                             {% if chapter_has_active_quiz or chapter.quizzes.count() > 0 %}
+                                <h5 class="chapter-header">{{ chapter.name }}</h5>
+                                <div class="row g-3"> {# Grid for quiz cards #}
+                                    {% for quiz in chapter.quizzes.order_by('title').all() %}
+                                      <div class="col-md-6 col-lg-4">
+                                        <div class="card h-100 quiz-card {% if not quiz.is_active %}quiz-inactive{% endif %}">
+                                          <div class="card-body">
+                                            <h6 class="card-title">{{ quiz.title }}</h6>
+                                            <h6 class="card-subtitle mb-2 ">Duration: {{ quiz.duration_minutes }} min</h6>
+                                          </div>
+                                          <div class="card-footer text-center">
+                                            {# --- Attempt Button / Score Display --- #}
+                                            {% if quiz.is_active %}
+                                              <a href="{{ url_for('user.start_quiz', quiz_id=quiz.id) }}" class="btn btn-primary">Attempt Quiz</a>
+                                              {# Check if high score exists for this quiz #}
+                                              {% if quiz.id in high_scores %}
+                                                {% set score_info = high_scores[quiz.id] %}
+                                                <span class="badge bg-info ms-2" title="Your highest score">
+                                                    Highest: {{ score_info.score }}/{{ score_info.total }}
+                                                </span>
+                                              {% endif %}
+                                            {% else %}
+                                                <span class=" small">Not Active</span>
+                                                 {# Still show high score even if inactive now #}
+                                                 {% if quiz.id in high_scores %}
+                                                    {% set score_info = high_scores[quiz.id] %}
+                                                    <span class="badge bg-secondary ms-2" title="Your highest score">
+                                                        Highest: {{ score_info.score }}/{{ score_info.total }}
+                                                    </span>
+                                                 {% endif %}
+                                            {% endif %}
+                                            {# --- End Attempt Button / Score Display --- #}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    {% else %}
+                                         
+                                        <p class=" small col-12">No quizzes available in this chapter yet.</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <p class="">No chapters found for this subject.</p>
+                        {% endfor %} {# End chapter loop #}
+                    </div> {# End Accordion Body #}
+                </div> {# End Accordion Collapse #}
+            </div> {# End Accordion Item #}
+        {% endif %} {# End check for active quizzes in subject #}
+    {% else %}
+        <p class="text-center ">No subjects available yet.</p>
+    {% endfor %} {# End subject loop #}
+</div> {# End Subjects Accordion #}
+
+{% endblock %}

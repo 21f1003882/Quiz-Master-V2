@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Summary - Quiz App{% endblock %}
+
+{% block content %}
+<h1 class="adminHeading mb-4">Admin Summary</h1>
+
+<div class="row gy-4"> {# gy-4 adds vertical gutter space between rows #}
+
+    {# --- Chart 1: Top Scores by Subject --- #}
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">Highest Scores per Subject</div>
+            <div class="summary-card-body">
+                <canvas id="topScoresChart" height="200"></canvas> {# Adjust height as needed #}
+            </div>
+        </div>
+    </div>
+
+    {# --- Chart 2: Attempts per Subject --- #}
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">Total Attempts per Subject</div>
+            <div class="summary-card-body" style="max-height: 265px; display: flex; justify-content: center; align-items: center;"> {# Max height for doughnut #}
+                <canvas id="attemptsChart" style="max-height: 100%; max-width: 100%;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    {# --- Chart 3: Quiz Count per Subject --- #}
+    <div class="col-md-12 mt-4"> {# Full width for the third chart #}
+         <div class="card shadow-sm">
+            <div class="card-header">Number of Quizzes per Subject</div>
+            <div class="summary-card-body">
+                <canvas id="quizCountChart" height="150"></canvas> {# Adjust height #}
+            </div>
+        </div>
+    </div>
+
+</div>
+<h3 class="mt-5 mb-3">Content Overview</h3>
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-6">
+        <div class="card text-center bg-primary h-100">
+            <div class="card-body">
+                <h5 class="card-title display-6">{{ content_counts.users }}</h5>
+                <p class="card-text">Total Users</p>
+            </div>
+        </div>
+    </div>
+     <div class="col-md-3 col-6">
+        <div class="card text-center bg-success h-100">
+            <div class="card-body">
+                <h5 class="card-title display-6">{{ content_counts.subjects }}</h5>
+                <p class="card-text">Total Subjects</p>
+            </div>
+        </div>
+    </div>
+     <div class="col-md-2 col-4">
+        <div class="card text-center bg-info text-dark h-100">
+            <div class="card-body">
+                <h5 class="card-title display-6">{{ content_counts.chapters }}</h5>
+                <p class="card-text">Total Chapters</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2 col-4">
+        <div class="card text-center bg-warning text-dark h-100">
+            <div class="card-body">
+                <h5 class="card-title display-6">{{ content_counts.quizzes }}</h5>
+                <p class="card-text">Total Quizzes</p>
+            </div>
+        </div>
+    </div>
+     <div class="col-md-2 col-4">
+        <div class="card text-center bg-secondary h-100">
+            <div class="card-body">
+                <h5 class="card-title display-6">{{ content_counts.questions }}</h5>
+                <p class="card-text">Total Questions</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{# --- NEW: User Activity Ranking --- #}
+<h3 class="mt-5 mb-3">User Activity Ranking</h3>
+<div class="card shadow-sm mb-4">
+     <div class="card-header">Users Ranked by Quiz Attempts</div>
+     <div class="card-body">
+         <table class="table table-striped table-hover">
+             <thead>
+                 <tr>
+                     <th>Rank</th>
+                     <th>Username</th>
+                     <th>Email</th>
+                     <th>Attempts</th>
+                     <th>View Activity</th>
+                 </tr>
+             </thead>
+             <tbody>
+                 {% for user_stat in user_activity %}
+                 <tr>
+                     <td>{{ loop.index }}</td>
+                     <td>{{ user_stat.username }}</td>
+                     <td>{{ user_stat.email }}</td>
+                     <td>{{ user_stat.attempt_count }}</td>
+                     <td>
+                         <a href="{{ url_for('admin.user_activity', user_id=user_stat.id) }}" class="btn btn-sm btn-outline-info">View</a>
+                     </td>
+                 </tr>
+                 {% else %}
+                 <tr>
+                     <td colspan="5" class="text-center ">No user activity found.</td>
+                 </tr>
+                 {% endfor %}
+             </tbody>
+         </table>
+    </div>
+</div>
+
+
+{# --- NEW: Quizzes Without Questions --- #}
+<h3 class="mt-5 mb-3">Incomplete Quizzes</h3>
+<div class="card shadow-sm mb-4">
+     <div class="card-header">Quizzes Without Any Questions</div>
+     <div class="card-body">
+        {% if quizzes_no_questions %}
+             <table class="table table-striped table-hover table-warning"> {# Added table-warning #}
+                 <thead>
+                     <tr>
+                         <th>Quiz Title</th>
+                         <th>Chapter</th>
+                         <th>Subject</th>
+                         <th>Actions</th>
+                     </tr>
+                 </thead>
+                 <tbody>
+                     {% for quiz in quizzes_no_questions %}
+                     <tr>
+                         <td>{{ quiz.title }}</td>
+                         <td>{{ quiz.chapter.name }}</td>
+                         <td>{{ quiz.chapter.subject.name }}</td>
+                         <td>
+                             <a href="{{ url_for('admin.manage_quiz_questions', quiz_id=quiz.id) }}" class="btn btn-sm btn-primary">Add Questions</a>
+                              <a href="{{ url_for('admin.edit_quiz', quiz_id=quiz.id) }}" class="btn btn-sm btn-outline-secondary ms-1">Edit Quiz</a>
+                         </td>
+                     </tr>
+                     {% endfor %}
+                 </tbody>
+             </table>
+         {% else %}
+            <p class="text-center ">All quizzes have at least one question.</p>
+         {% endif %}
+    </div>
+</div>
+
+
+{% endblock %}
+
+
+{% block scripts_extra %}
+{# --- Include Chart.js via CDN --- #}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js" integrity="sha256-ErZ09KkZnzjpqcane4SCyyHsKAXMvID9/xwbl/Aq1pc=" crossorigin="anonymous"></script>
+
+{# --- Script to Render Charts --- #}
+<script>
+  // Get data passed from Flask (using tojson filter for safety)
+  const chartData = {{ chart_data | tojson }};
+
+  // Define some color palettes
+  const colorPalette1 = ['#2575fc', '#6a11cb', '#fecf4f', '#fc6a4f', '#4ffecf', '#cf4fec'];
+  const colorPalette2 = ['#ff6384', '#36a2eb', '#ffce56', '#4bc0c0', '#9966ff', '#ff9f40'];
+  const colorPalette3 = ['rgba(54, 162, 235, 0.8)', 'rgba(255, 99, 132, 0.8)', 'rgba(75, 192, 192, 0.8)', 'rgba(255, 206, 86, 0.8)', 'rgba(153, 102, 255, 0.8)', 'rgba(255, 159, 64, 0.8)'];
+
+  // Helper to generate colors, repeating if necessary
+  function generateColors(palette, count) {
+      const colors = [];
+      for (let i = 0; i < count; i++) {
+          colors.push(palette[i % palette.length]);
+      }
+      return colors;
+  }
+
+  // --- Chart 1: Top Scores (Bar Chart) ---
+  const topScoresCtx = document.getElementById('topScoresChart')?.getContext('2d');
+  if (topScoresCtx && chartData.top_scores.labels.length > 0) {
+    const topScoresChart = new Chart(topScoresCtx, {
+      type: 'bar',
+      data: {
+        labels: chartData.top_scores.labels,
+        datasets: [{
+          label: 'Highest Score',
+          data: chartData.top_scores.data,
+          backgroundColor: generateColors(colorPalette3, chartData.top_scores.labels.length),
+          borderColor: generateColors(colorPalette3.map(c => c.replace('0.8', '1')), chartData.top_scores.labels.length), // Slightly darker border
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false, // Allows height setting to work better
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+                 // Ensure only integers are shown if scores are integers
+                 stepSize: 1
+            }
+          }
+        },
+        plugins: { legend: { display: false } } // Hide legend for single dataset
+      }
+    });
+  } else if (topScoresCtx) {
+      topScoresCtx.font = "16px Poppins";
+      topScoresCtx.fillStyle = "#6c757d";
+      topScoresCtx.textAlign = "center";
+      topScoresCtx.fillText("No score data available.", topScoresCtx.canvas.width / 2, 50);
+  }
+
+
+  // --- Chart 2: Attempts (Doughnut Chart) ---
+  const attemptsCtx = document.getElementById('attemptsChart')?.getContext('2d');
+  if (attemptsCtx && chartData.attempts.labels.length > 0) {
+    const attemptsChart = new Chart(attemptsCtx, {
+      type: 'doughnut',
+      data: {
+        labels: chartData.attempts.labels,
+        datasets: [{
+          label: 'Total Attempts',
+          data: chartData.attempts.data,
+          backgroundColor: generateColors(colorPalette1, chartData.attempts.labels.length),
+          hoverOffset: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false, // Important for controlling size in flex container
+        plugins: {
+          legend: {
+            position: 'top', // Position legend if needed
+          }
+        }
+      }
+    });
+   } else if (attemptsCtx) {
+      attemptsCtx.font = "16px Poppins";
+      attemptsCtx.fillStyle = "#6c757d";
+      attemptsCtx.textAlign = "center";
+      attemptsCtx.fillText("No attempt data available.", attemptsCtx.canvas.width / 2, attemptsCtx.canvas.height / 2);
+  }
+
+  // --- Chart 3: Quiz Count (Bar Chart) ---
+  const quizCountCtx = document.getElementById('quizCountChart')?.getContext('2d');
+  if (quizCountCtx && chartData.quiz_count.labels.length > 0) {
+    const quizCountChart = new Chart(quizCountCtx, {
+      type: 'bar',
+      data: {
+        labels: chartData.quiz_count.labels,
+        datasets: [{
+          label: 'Number of Quizzes',
+          data: chartData.quiz_count.data,
+          backgroundColor: generateColors(colorPalette2, chartData.quiz_count.labels.length),
+          borderWidth: 0 // Optional: remove border
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+         scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+                 // Ensure only integers are shown
+                 stepSize: 1,
+                 precision: 0
+            }
+          }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+   } else if (quizCountCtx) {
+       quizCountCtx.font = "16px Poppins";
+       quizCountCtx.fillStyle = "#6c757d";
+       quizCountCtx.textAlign = "center";
+       quizCountCtx.fillText("No quiz data available.", quizCountCtx.canvas.width / 2, 50);
+   }
+
+</script>
+{% endblock %}

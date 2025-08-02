@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}My Summary - Quiz App{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">My Quiz Summary</h1>
+
+<div class="row gy-4">
+    {# --- Chart 1: Top Scores by Subject --- #}
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">My Highest Scores per Subject</div>
+            <div class="summary-card-body">
+                <canvas id="topScoresChartUser" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    {# --- Chart 2: Attempts per Subject --- #}
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header">My Attempts per Subject</div>
+            <div class="summary-card-body" style="max-height: 265px; display: flex; justify-content: center; align-items: center;">
+                <canvas id="attemptsChartUser" style="max-height: 100%; max-width: 100%;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h3 class="mt-5 mb-3">Past Attempts</h3>
+<div class="card shadow-sm mb-4">
+    <div class="summary-card-body">
+        {% if attempts %}
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Quiz Title</th>
+                        <th>Subject</th>
+                        <th>Score</th>
+                        <th>Percentage</th>
+                        <th>Date Submitted</th>
+                        <th>Time Taken</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attempt in attempts %}
+                    <tr>
+                        <td>{{ attempt.quiz.title }}</td>
+                        <td>{{ attempt.quiz.chapter.subject.name }}</td>
+                        <td>{{ attempt.score }} / {{ attempt.total_questions }}</td>
+                        <td>{{ "%.1f"|format(attempt.percentage_score) }}%</td>
+                        <td>
+                            {% if attempt.submitted_at %}
+                                {{ attempt.submitted_at.strftime('%Y-%m-%d %H:%M') }}
+                            {% else %}
+                                <span class="">Incomplete</span>
+                            {% endif %}
+                        </td>
+                         <td>
+                            {# --- USE THE NEW FILTER --- #}
+                            {{ attempt.time_taken | timedeltaformat }}
+                         </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p class="text-center ">You haven't completed any quizzes yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block scripts_extra %}
+{# --- Include Chart.js via CDN --- #}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js" integrity="sha256-ErZ09KkZnzjpqcane4SCyyHsKAXMvID9/xwbl/Aq1pc=" crossorigin="anonymous"></script>
+
+{# --- Script to Render User Charts --- #}
+<script>
+  // Get data passed from Flask
+  const chartData = {{ chart_data | tojson }};
+
+  // Define color palettes (can reuse admin ones or define new)
+  const userPalette1 = ['#1abc9c', '#3498db', '#9b59b6', '#f1c40f', '#e67e22', '#e74c3c'];
+  const userPalette2 = ['rgba(26, 188, 156, 0.8)', 'rgba(52, 152, 219, 0.8)', 'rgba(155, 89, 182, 0.8)', 'rgba(241, 196, 15, 0.8)', 'rgba(230, 126, 34, 0.8)', 'rgba(231, 76, 60, 0.8)'];
+
+  // Helper to generate colors
+  function generateUserColors(palette, count) {
+      const colors = []; for (let i = 0; i < count; i++) { colors.push(palette[i % palette.length]); } return colors;
+  }
+
+  // --- Chart 1: User Top Scores (Bar Chart) ---
+  const topScoresCtxUser = document.getElementById('topScoresChartUser')?.getContext('2d');
+  if (topScoresCtxUser && chartData.top_scores.labels.length > 0) {
+    new Chart(topScoresCtxUser, {
+      type: 'bar', data: { labels: chartData.top_scores.labels, datasets: [{ label: 'My Highest Score', data: chartData.top_scores.data, backgroundColor: generateUserColors(userPalette2, chartData.top_scores.labels.length), borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } }
+    });
+  } else if (topScoresCtxUser) {
+       topScoresCtxUser.font = "16px Poppins"; topScoresCtxUser.fillStyle = "#6c757d"; topScoresCtxUser.textAlign = "center"; topScoresCtxUser.fillText("No score data available.", topScoresCtxUser.canvas.width / 2, 50);
+  }
+
+  // --- Chart 2: User Attempts (Doughnut Chart) ---
+  const attemptsCtxUser = document.getElementById('attemptsChartUser')?.getContext('2d');
+  if (attemptsCtxUser && chartData.attempts.labels.length > 0) {
+     new Chart(attemptsCtxUser, {
+      type: 'doughnut', data: { labels: chartData.attempts.labels, datasets: [{ label: 'My Attempts', data: chartData.attempts.data, backgroundColor: generateUserColors(userPalette1, chartData.attempts.labels.length), hoverOffset: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } }
+    });
+   } else if (attemptsCtxUser) {
+       attemptsCtxUser.font = "16px Poppins"; attemptsCtxUser.fillStyle = "#6c757d"; attemptsCtxUser.textAlign = "center"; attemptsCtxUser.fillText("No attempt data available.", attemptsCtxUser.canvas.width / 2, attemptsCtxUser.canvas.height / 2);
+  }
+</script>
+{% endblock %}

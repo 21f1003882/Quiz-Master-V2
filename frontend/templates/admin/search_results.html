@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results{% if query %} for "{{ query }}"{% endif %}{% endblock %}
+
+
+
+{% block content %}
+<div class="search-bar-container">
+    <form action="{{ url_for('admin.search') }}" method="GET" class="search-form position-relative">
+        <input type="search" name="q" class="form-control search-input" placeholder="Search Users, Subjects, Quizzes..." value="{{ query or '' }}" aria-label="Search">
+        <button class="search-button" type="submit">
+            {# Basic SVG Search Icon #}
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+            </svg>
+        </button>
+    </form>
+</div>
+
+{% if query %}
+    <h2 class="mb-4">Search Results for "{{ query }}"</h2>
+
+    {# --- Users Found --- #}
+    <div class="results-section">
+        <h4>Users Found ({{ users|length }})</h4>
+        {% if users %}
+        <ul class="list-group list-group-flush">
+            {% for user in users %}
+            <li class="list-group-item">
+                <span>{{ user.username }} ({{ user.email }})</span>
+                {# Link to a potential user detail/edit page if you create one later #}
+                {# <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" class="btn btn-sm btn-outline-secondary">View/Edit</a> #}
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="">No users found matching your query.</p>
+        {% endif %}
+    </div>
+
+    {# --- Subjects Found --- #}
+    <div class="results-section">
+        <h4>Subjects Found ({{ subjects|length }})</h4>
+        {% if subjects %}
+        <ul class="list-group list-group-flush">
+            {% for subject in subjects %}
+             <li class="list-group-item">
+                <span>{{ subject.name }} {% if subject.description %}<small class="">- {{ subject.description|truncate(80) }}</small>{% endif %}</span>
+                <a href="{{ url_for('admin.edit_subject', subject_id=subject.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="">No subjects found matching your query.</p>
+        {% endif %}
+    </div>
+
+    {# --- Quizzes Found --- #}
+    <div class="results-section">
+        <h4>Quizzes Found ({{ quizzes|length }})</h4>
+        {% if quizzes %}
+         <ul class="list-group list-group-flush">
+            {% for quiz in quizzes %}
+             <li class="list-group-item">
+                <span>{{ quiz.title }} <small class="">({{ quiz.chapter.name }} / {{ quiz.chapter.subject.name }})</small></span>
+                <span>
+                    <a href="{{ url_for('admin.manage_quiz_questions', quiz_id=quiz.id) }}" class="btn btn-sm btn-outline-secondary">Questions</a>
+                    <a href="{{ url_for('admin.edit_quiz', quiz_id=quiz.id) }}" class="btn btn-sm btn-outline-primary ms-1">Edit</a>
+                </span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="">No quizzes found matching your query.</p>
+        {% endif %}
+    </div>
+
+{% else %}
+    {# Optionally show some message if accessed without a query #}
+    {# <p class="text-center">Enter a term in the search bar above.</p> #}
+{% endif %}
+
+{% endblock %}

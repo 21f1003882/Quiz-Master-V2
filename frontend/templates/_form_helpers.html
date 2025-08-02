@@ -1,0 +1,17 @@
+{# templates/_form_helpers.html #}
+{% macro render_field(field) %}
+  <div class="form-group mb-3">
+    {{ field.label(class="form-label") }}
+    {{ field(class="form-control" + (" is-invalid" if field.errors else ""), **kwargs) }}
+    {% if field.errors %}
+      <div class="invalid-feedback">
+        {% for error in field.errors %}
+          <span>{{ error }}</span>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% if field.description %}
+      <small class="form-text ">{{ field.description }}</small>
+    {% endif %}
+  </div>
+{% endmacro %}

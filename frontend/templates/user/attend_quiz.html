@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+
+{% block title %}Attempting: {{ quiz.title }}{% endblock %}
+
+
+
+{% block content %}
+<div id="quiz-meta" data-attempt-id="{{ attempt_id_for_js }}" style="display: none;"></div>
+
+<h1 class="mb-2">{{ quiz.title }}</h1>
+<h5 class=" mb-3">Chapter: {{ quiz.chapter.name }}</h5>
+
+{# --- Timer and Progress --- #}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>Question <span id="current-question-number">1</span> of {{ questions_data|length }}</div>
+    <div>Time Remaining: <span id="timer">--:--</span></div>
+</div>
+<div class="progress mb-4">
+  <div id="progress-bar" class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+</div>
+
+{# --- Questions Area --- #}
+<form id="quiz-form">
+    {% for question in questions_data %}
+    <div class="quiz-question card shadow-sm mb-4" id="question-{{ loop.index0 }}" data-question-id="{{ question.id }}" data-answered="false" data-checked="false"> {# Add state flags #}
+        
+        <div class="card-body">
+            <h5 class="card-title mb-3">Question {{ loop.index }}</h5>
+            <p class="card-text fs-5" style="white-space: pre-wrap;">{{ question.text }}</p>
+            <hr>
+            <div class="options-list">
+                {% for option in question.options %}
+                <div class="form-check">
+                    <input class="form-check-input option-radio" type="radio" name="q_{{ question.id }}" id="option_{{ option.id }}" value="{{ option.id }}" required>
+                    {# Add data attribute to label for easy selection #}
+                    <label class="form-check-label" for="option_{{ option.id }}" data-option-id="{{ option.id }}">
+                        {{ option.text }}
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</form>
+
+{# --- Navigation Buttons (Modified) --- #}
+<div class="d-flex justify-content-between mt-4">
+    <div> {# Group Check/Next/Submit #}
+        <button id="check-btn" class="btn btn-info me-2" disabled>Check Answer</button> {# Added Check button, initially disabled #}
+        <button id="next-btn" class="btn btn-primary d-none">Next &raquo;</button> {# Initially hidden #}
+        <button id="submit-btn" class="btn btn-success d-none">Submit Quiz</button> {# Initially hidden #}
+    </div>
+</div>
+
+{% endblock %}
+
+
+{% block scripts_extra %}
+<script>
+    // --- DOM Elements ---
+    const questions = document.querySelectorAll('.quiz-question');
+    const progressBar = document.getElementById('progress-bar');
+    const currentQuestionNumSpan = document.getElementById('current-question-number');
+    const nextBtn = document.getElementById('next-btn');
+    const submitBtn = document.getElementById('submit-btn');
+    const checkBtn = document.getElementById('check-btn');
+    const timerSpan = document.getElementById('timer');
+    const quizForm = document.getElementById('quiz-form');
+    const quizMetaDiv = document.getElementById('quiz-meta');
+
+    // --- Quiz State ---
+    const totalQuestions = questions.length;
+    let currentQuestionIndex = 0;
+    const userAnswers = {};
+    let quizSubmitted = false;
+
+    // --- Data from Flask ---
+    const attemptId = quizMetaDiv?.dataset.attemptId || {{ attempt_id_for_js }};
+    const quizEndTime = {{ end_time_timestamp }};
+    const csrfToken = '{{ csrf_token() }}';
+
+    console.log("Attempt ID:", attemptId);
+    console.log("Raw quizEndTime from Flask (ms epoch):", quizEndTime);
+    console.log("Current Client Time (ms epoch):", Date.now());
+    console.log("Calculated Initial Time Left (ms):", quizEndTime - Date.now());
+
+    let timerInterval;
+
+    // --- Functions ---
+
+    function showQuestion(index) {
+        if (index < 0 || index >= totalQuestions || quizSubmitted) return;
+
+        questions.forEach((q, i) => {
+            q.classList.toggle('active', i === index);
+        });
+        currentQuestionIndex = index;
+        currentQuestionNumSpan.textContent = index + 1;
+        updateProgress();
+        resetOptionStyles(questions[currentQuestionIndex]); // Reset styles for the question being shown
+        disableEnableRadios(questions[currentQuestionIndex], questions[currentQuestionIndex].dataset.checked === 'true'); // Disable radios if already checked
+        updateNavButtons(); // Update button visibility/state for the new question
+        enableDisableCheckButton(); // Enable check button if an answer is already selected for this question and it's not checked
+    }
+
+    function updateProgress() {
+        const progress = (currentQuestionIndex / totalQuestions) * 100;
+        progressBar.style.width = `${progress}%`;
+        progressBar.setAttribute('aria-valuenow', progress);
+    }
+
+    // --- REFINED updateNavButtons ---
+    function updateNavButtons() {
+        const currentQuestionDiv = questions[currentQuestionIndex];
+        const isChecked = currentQuestionDiv.dataset.checked === 'true';
+        console.log(`updateNavButtons: Index ${currentQuestionIndex}, isChecked=${isChecked}, quizSubmitted=${quizSubmitted}`); // DEBUG
+
+        // Use Bootstrap classes for visibility
+        if (isChecked || quizSubmitted) {
+            checkBtn.classList.add('d-none'); // Hide Check
+        } else {
+            checkBtn.classList.remove('d-none'); // Show Check
+        }
+
+        // Reset visibility first using classes
+        nextBtn.classList.add('d-none');
+        submitBtn.classList.add('d-none');
+
+        // Show Next/Submit only if checked and not submitted
+        if (isChecked && !quizSubmitted) {
+            if (currentQuestionIndex === totalQuestions - 1) {
+                submitBtn.classList.remove('d-none'); // Show Submit
+            } else {
+                nextBtn.classList.remove('d-none'); // Show Next
+            }
+        }
+
+        // Final check on disabled state (mostly for submit phase)
+        submitBtn.disabled = quizSubmitted;
+        nextBtn.disabled = quizSubmitted;
+    }
+    // --- END REFINED updateNavButtons ---
+
+
+     function enableDisableCheckButton() {
+         if (quizSubmitted) {
+             checkBtn.disabled = true;
+             return;
+         }
+         const currentQuestionDiv = questions[currentQuestionIndex];
+         const isChecked = currentQuestionDiv.dataset.checked === 'true';
+         const selectedOption = currentQuestionDiv.querySelector(`input.option-radio:checked`);
+         checkBtn.disabled = isChecked || !selectedOption; // Enable only if not checked, and an option IS selected
+     }
+
+     function disableEnableRadios(questionDiv, disable) {
+         questionDiv.querySelectorAll('input.option-radio').forEach(radio => {
+            // Don't re-enable if quiz is submitted globally
+            radio.disabled = disable || quizSubmitted;
+         });
+     }
+
+    function saveAnswer() {
+        // ... (keep as before) ...
+        if (currentQuestionIndex >= totalQuestions) return;
+        const currentQuestionDiv = questions[currentQuestionIndex];
+        if (!currentQuestionDiv) return;
+        const questionId = currentQuestionDiv.dataset.questionId;
+        const selectedOption = currentQuestionDiv.querySelector(`input.option-radio:checked`);
+        if (selectedOption) { userAnswers[questionId] = selectedOption.value; }
+        else { delete userAnswers[questionId]; }
+        console.log("User answers object updated:", userAnswers);
+    }
+
+    function resetOptionStyles(questionDiv) {
+        // ... (keep as before) ...
+        questionDiv.querySelectorAll('.options-list .form-check-label').forEach(label => {
+            label.classList.remove('option-correct', 'option-incorrect', 'option-actual-correct');
+        });
+    }
+
+    function highlightAnswers(questionDiv, selectedOptionId, correctOptionId, isCorrect) {
+       // ... (keep as before) ...
+        resetOptionStyles(questionDiv);
+        const labels = questionDiv.querySelectorAll('.options-list .form-check-label');
+        labels.forEach(label => {
+            const optionId = label.dataset.optionId;
+            if (isCorrect && optionId == selectedOptionId) { label.classList.add('option-correct');}
+            else if (!isCorrect) {
+                if (optionId == selectedOptionId) { label.classList.add('option-incorrect'); }
+                if (optionId == correctOptionId) { label.classList.add('option-actual-correct');}
+            }
+        });
+    }
+
+    function submitQuizAttempt(isTimeout = false) {
+       // ... (keep as before - includes CSRF token header) ...
+       if (quizSubmitted) return;
+       quizSubmitted = true;
+       clearInterval(timerInterval);
+       console.log("Final Submit - Submitting answers:", userAnswers);
+       if (!isTimeout) saveAnswer();
+       nextBtn.disabled = true;
+       submitBtn.disabled = true;
+       checkBtn.disabled = true; // Disable check button too
+       submitBtn.textContent = 'Submitting...';
+       questions.forEach(q => disableEnableRadios(q, true)); // Disable all radios
+       const headers = {'Content-Type': 'application/json', 'X-CSRFToken': csrfToken };
+       fetch(`{{ url_for('user.submit_quiz', attempt_id=attempt_id_for_js) }}`, { method: 'POST', headers: headers, body: JSON.stringify({ answers: userAnswers }) })
+        .then(response => { /* ... */ if (!response.ok) { /* ... */ } return response.json(); })
+        .then(data => { /* ... */ if (data.redirect_url) { window.location.href = data.redirect_url; } else { window.location.href = "{{ url_for('user.summary') }}"; } })
+        .catch(error => { /* ... */ });
+    }
+
+    function updateTimer() {
+        
+         const now = Date.now();
+         const timeLeft = quizEndTime - now;
+         if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            timerSpan.textContent = "00:00";
+            if (!quizSubmitted) {
+                 console.log("Timer expired, submitting automatically."); 
+                 alert("Time's up! Submitting your quiz automatically.");
+                 saveAnswer();
+                 submitQuizAttempt(true);
+            }
+            return;
+        }
+
+        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+        timerSpan.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    function startTimer() {
+        console.log("startTimer called"); 
+         updateTimer(); 
+         if (timerInterval) clearInterval(timerInterval); 
+         timerInterval = setInterval(updateTimer, 1000);
+         console.log("setInterval setup with ID:", timerInterval); 
+    }
+
+    // --- Event Listeners ---
+
+    // Listen for changes on ANY radio button within the form
+    quizForm.addEventListener('change', (event) => {
+        // Ensure the event target is one of our radio buttons and pertains to the current question
+        if (event.target.classList.contains('option-radio') && event.target.closest('.quiz-question') === questions[currentQuestionIndex]) {
+             enableDisableCheckButton();
+        }
+    });
+
+
+    checkBtn.addEventListener('click', () => {
+        const currentQuestionDiv = questions[currentQuestionIndex];
+        const questionId = currentQuestionDiv.dataset.questionId;
+        const selectedOptionInput = currentQuestionDiv.querySelector(`input.option-radio:checked`);
+
+        if (!selectedOptionInput) return; // Should be disabled, but double-check
+        const selectedOptionId = selectedOptionInput.value;
+
+        disableEnableRadios(currentQuestionDiv, true); // Disable options
+        checkBtn.disabled = true;
+        checkBtn.textContent = 'Checking...';
+
+        fetch(`{{ url_for('user.check_answer', attempt_id=attempt_id_for_js) }}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+            body: JSON.stringify({ question_id: questionId, selected_option_id: selectedOptionId })
+        })
+        .then(response => { /* ... error handling ... */ if (!response.ok) { throw new Error('Check failed');} return response.json(); })
+        .then(data => {
+             highlightAnswers(currentQuestionDiv, selectedOptionId, data.correct_option_id, data.correct);
+             currentQuestionDiv.dataset.checked = 'true'; // Mark as checked
+             console.log(`Set data-checked for question index ${currentQuestionIndex} to:`, currentQuestionDiv.dataset.checked); // DEBUG
+             saveAnswer(); // Save the checked answer
+             updateNavButtons(); // Update button visibility (should show Next/Submit now)
+             console.log('Called updateNavButtons after check.'); // DEBUG
+             console.log('Next Btn display after update:', nextBtn.style.display, nextBtn.classList); // DEBUG
+             console.log('Submit Btn display after update:', submitBtn.style.display, submitBtn.classList); // DEBUG
+
+        })
+        .catch(error => { /* ... error handling, re-enable UI ... */ })
+        .finally(() => {
+            checkBtn.textContent = 'Check Answer'; // Reset text even on error?
+             // Re-enable check button ONLY if an error occurred and not submitted
+             // enableDisableCheckButton(); // Maybe not - force user to move on?
+        });
+    });
+
+
+    nextBtn.addEventListener('click', () => {
+        if (quizSubmitted) return;
+        // Move to next question - answer was saved when checked
+        if (currentQuestionIndex < totalQuestions - 1) {
+            showQuestion(currentQuestionIndex + 1);
+        }
+    });
+
+    submitBtn.addEventListener('click', () => {
+        if (quizSubmitted) return;
+        // Last answer was saved when it was checked
+        if(confirm('Are you sure you want to submit your quiz?')) {
+            submitQuizAttempt(false);
+        }
+    });
+    console.log("Initial setup - totalQuestions:", totalQuestions);
+    // --- Initial Page Load Setup ---
+    if (questions.length > 0) {
+        showQuestion(0); // Show the first question
+        startTimer();    // Start the countdown timer
+    } else {
+        // ... (handle no questions) ...
+        document.getElementById('quiz-form').innerHTML = '<div class="alert alert-warning">No questions found for this quiz. Please contact an administrator.</div>';
+        nextBtn.style.display = 'none';
+        submitBtn.style.display = 'none';
+        checkBtn.style.display = 'none'; // Hide check button too
+        document.getElementById('timer').textContent = 'N/A';
+        document.getElementById('current-question-number').textContent = '0';
+    }
+
+</script>
+{% endblock %}

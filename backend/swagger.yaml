@@ -1,0 +1,441 @@
+definitions: {}
+info:
+  title: My API
+  version: '1.0'
+paths:
+  /api/attempts/:
+    get:
+      parameters:
+      - description: Filter by user ID (admin only)
+        in: query
+        name: user_id
+        required: false
+        type: integer
+      - description: Filter by quiz ID
+        in: query
+        name: quiz_id
+        required: false
+        type: integer
+      responses:
+        '200':
+          description: List of quiz attempts
+          schema:
+            $ref: '#/definitions/AttemptListResponse'
+      summary: List quiz attempts (filtered by user/quiz)
+      tags:
+      - Attempts
+    post:
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/AttemptInput'
+      responses:
+        '201':
+          description: Quiz attempt recorded
+        '400': {}
+        '404': {}
+        '500': {}
+      summary: Record a quiz attempt (Admin Only)
+      tags:
+      - Attempts
+  /api/attempts/{attempt_id}:
+    delete:
+      parameters:
+      - in: path
+        name: attempt_id
+        required: true
+        type: integer
+      responses:
+        '200':
+          description: Attempt deleted
+        '404': {}
+        '500': {}
+      summary: Delete a quiz attempt (Admin Only)
+      tags:
+      - Attempts
+    get:
+      parameters:
+      - in: path
+        name: attempt_id
+        required: true
+        type: integer
+      responses:
+        '200':
+          description: Attempt details
+          schema:
+            $ref: '#/definitions/Attempt'
+        '403': {}
+        '404': {}
+      summary: Get details of a specific quiz attempt
+      tags:
+      - Attempts
+    put:
+      parameters:
+      - in: path
+        name: attempt_id
+        required: true
+        type: integer
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/AttemptInputOptional'
+      responses:
+        '200':
+          description: Attempt updated
+        '404': {}
+        '500': {}
+      summary: Update a quiz attempt (Admin Only)
+      tags:
+      - Attempts
+  /api/chapters/:
+    get:
+      parameters:
+      - description: Filter by subject ID
+        in: query
+        name: subject_id
+        required: false
+        type: integer
+      responses:
+        '200':
+          description: A list of chapters
+          schema:
+            $ref: '#/definitions/ChapterListResponse'
+      summary: Get a list of all chapters
+      tags:
+      - Chapters
+    post:
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ChapterInput'
+      responses:
+        '201':
+          description: Chapter created
+          schema:
+            $ref: '#/definitions/Chapter'
+        '400':
+          description: Invalid input or chapter name exists in subject
+        '404':
+          description: Subject not found
+      summary: Create a new chapter
+      tags:
+      - Chapters
+  /api/chapters/{chapter_id}:
+    delete:
+      parameters:
+      - in: path
+        name: chapter_id
+        required: true
+        type: integer
+      responses:
+        '200':
+          description: Chapter deleted
+        '404':
+          description: Chapter not found
+      summary: Delete a chapter
+      tags:
+      - Chapters
+    get:
+      parameters:
+      - in: path
+        name: chapter_id
+        required: true
+        type: integer
+      responses:
+        '200':
+          description: Chapter details
+          schema:
+            $ref: '#/definitions/Chapter'
+        '404':
+          description: Chapter not found
+      summary: Get details of a specific chapter
+      tags:
+      - Chapters
+    put:
+      parameters:
+      - in: path
+        name: chapter_id
+        required: true
+        type: integer
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/ChapterInputOptional'
+      responses:
+        '200':
+          description: Chapter updated
+          schema:
+            $ref: '#/definitions/Chapter'
+        '400':
+          description: Chapter name exists
+        '404':
+          description: Chapter not found
+      summary: Update an existing chapter
+      tags:
+      - Chapters
+  /api/questions/{question_id}:
+    delete:
+      parameters:
+      - in: path
+        name: question_id
+        required: true
+        type: integer
+      responses:
+        '200':
+          description: Question deleted
+        '404': {}
+        '500': {}
+      summary: Delete a question
+      tags:
+      - Questions
+    get:
+      parameters:
+      - in: path
+        name: question_id
+        required: true
+        type: integer
+      responses:
+        '200':
+          description: Question details
+          schema:
+            $ref: '#/definitions/QuestionWithOptions'
+        '404': {}
+      summary: Get details of a specific question, including options
+      tags:
+      - Questions
+    put:
+      parameters:
+      - in: path
+        name: question_id
+        required: true
+        type: integer
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/QuestionWithOptionsInput'
+      responses:
+        '200':
+          description: Question updated
+          schema:
+            $ref: '#/definitions/QuestionWithOptions'
+        '400': {}
+        '404': {}
+        '500': {}
+      summary: Update an existing question and its options
+      tags:
+      - Questions
+  /api/quizzes/:
+    get:
+      parameters:
+      - description: Filter by chapter ID
+        in: query
+        name: chapter_id
+        required: false
+        type: integer
+      responses:
+        '200':
+          description: A list of quizzes
+          schema:
+            $ref: '#/definitions/QuizListResponse'
+      summary: Get a list of all quizzes
+      tags:
+      - Quizzes
+    post:
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/QuizInput'
+      responses:
+        '201':
+          description: Quiz created
+          schema:
+            $ref: '#/definitions/Quiz'
+        '400': {}
+        '404': {}
+        '500': {}
+      summary: Create a new quiz
+      tags:
+      - Quizzes
+  /api/quizzes/{quiz_id}:
+    delete:
+      parameters:
+      - in: path
+        name: quiz_id
+        required: true
+        type: integer
+      responses:
+        '200':
+          description: Quiz deleted
+        '404': {}
+        '500': {}
+      summary: Delete a quiz
+      tags:
+      - Quizzes
+    get:
+      parameters:
+      - in: path
+        name: quiz_id
+        required: true
+        type: integer
+      responses:
+        '200':
+          description: Quiz details
+          schema:
+            $ref: '#/definitions/Quiz'
+        '404': {}
+      summary: Get details of a specific quiz
+      tags:
+      - Quizzes
+    put:
+      parameters:
+      - in: path
+        name: quiz_id
+        required: true
+        type: integer
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/QuizInputOptional'
+      responses:
+        '200':
+          description: Quiz updated
+          schema:
+            $ref: '#/definitions/Quiz'
+        '404': {}
+        '500': {}
+      summary: Update an existing quiz
+      tags:
+      - Quizzes
+  /api/quizzes/{quiz_id}/questions:
+    get:
+      parameters:
+      - in: path
+        name: quiz_id
+        required: true
+        type: integer
+      responses:
+        '200':
+          description: List of questions with options
+          schema:
+            $ref: '#/definitions/QuestionListResponse'
+        '404': {}
+      summary: Get questions for a specific quiz
+      tags:
+      - Questions
+    post:
+      parameters:
+      - in: path
+        name: quiz_id
+        required: true
+        type: integer
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/QuestionWithOptionsInput'
+      responses:
+        '201':
+          description: Question created
+          schema:
+            $ref: '#/definitions/QuestionWithOptions'
+        '400': {}
+        '404': {}
+        '500': {}
+      summary: Add a question with options to a specific quiz
+      tags:
+      - Questions
+  /api/subjects/:
+    get:
+      responses:
+        '200':
+          description: List of subjects
+          schema:
+            $ref: '#/definitions/SubjectListResponse'
+      summary: Get list of subjects
+      tags:
+      - Subjects
+    post:
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SubjectInput'
+      responses:
+        '201':
+          description: Subject created
+          schema:
+            $ref: '#/definitions/Subject'
+        '400': {}
+        '500': {}
+      summary: Create a new subject
+      tags:
+      - Subjects
+  /api/subjects/{subject_id}:
+    delete:
+      parameters:
+      - in: path
+        name: subject_id
+        required: true
+        type: integer
+      responses:
+        '200':
+          description: Subject deleted
+        '404': {}
+        '500': {}
+      summary: Delete a subject
+      tags:
+      - Subjects
+    get:
+      parameters:
+      - in: path
+        name: subject_id
+        required: true
+        type: integer
+      responses:
+        '200':
+          description: Subject details
+          schema:
+            $ref: '#/definitions/Subject'
+        '404': {}
+      summary: Get details of a specific subject
+      tags:
+      - Subjects
+    put:
+      parameters:
+      - in: path
+        name: subject_id
+        required: true
+        type: integer
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/SubjectInputOptional'
+      responses:
+        '200':
+          description: Subject updated
+          schema:
+            $ref: '#/definitions/Subject'
+        '400': {}
+        '404': {}
+      summary: Update an existing subject
+      tags:
+      - Subjects
+securityDefinitions:
+  Bearer:
+    description: 'Enter: **Bearer &lt;your JWT token&gt;**'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: '2.0'
