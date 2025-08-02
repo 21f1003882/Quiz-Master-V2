@@ -23,12 +23,7 @@ A full-featured quiz platform where **Administrators** manage subjects, chapters
   - [6.3. Main Resources](#63-main-resources)
   - [6.4. Example Payloads](#64-example-payloads)
 - [7. Bulk Data Upload](#7-bulk-data-upload)
-- [8. Project Structure (Suggested)](#8-project-structure-suggested)
-- [9. Environment Variables (Suggested)](#9-environment-variables-suggested)
-- [10. Data Model Overview (Conceptual)](#10-data-model-overview-conceptual)
-- [11. Security Notes](#11-security-notes)
-- [12. Known Limitations & Roadmap](#12-known-limitations--roadmap)
-- [13. License](#13-license)
+
 
 ---
 
