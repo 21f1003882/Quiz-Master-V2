@@ -170,22 +170,6 @@ A full-featured quiz platform where **Administrators** manage subjects, chapters
 7. After submission, you are redirected to **My Summary** (`/dashboard/summary`).
 8. View **past attempts** and **performance charts** on the summary page.
 
-> **User Quiz Flow (Conceptual)**
->
-> ~~~~mermaid
-> flowchart LR
->   A[Browse Quizzes] --> B[Start Quiz]
->   B --> C[Question 1..N]
->   C -->|Check Answer| D{Correct?}
->   D -- Yes --> E[Highlight Correct]
->   D -- No --> F[Highlight Incorrect]
->   E --> G[Next/Prev]
->   F --> G[Next/Prev]
->   G --> H{Timer Expired or Submit?}
->   H -- Submit --> I[Evaluate & Save Attempt]
->   H -- Expired --> I[Auto-Submit & Save]
->   I --> J[Show Results & Summary]
-> ~~~~
 
 ---
 
